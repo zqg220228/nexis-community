@@ -370,6 +370,7 @@ app.get('/api/hot-posts', (req, res) => {
       COALESCE((SELECT SUM(CASE WHEN v.vote=1 THEN 1 ELSE 0 END) FROM post_votes v WHERE v.post_id = p.id),0) AS up_count
     FROM posts p
     WHERE p.created_at >= datetime('now','localtime','-1 day')
+      AND COALESCE((SELECT SUM(CASE WHEN v.vote=1 THEN 1 ELSE 0 END) FROM post_votes v WHERE v.post_id = p.id),0) >= 1
     ORDER BY up_count DESC, p.created_at DESC
     LIMIT 10
   `).all();
