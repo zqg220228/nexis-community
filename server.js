@@ -6,6 +6,7 @@ import crypto from 'crypto';
 import cookieParser from 'cookie-parser';
 import multer from 'multer';
 import fs from 'fs';
+import compression from 'compression';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,6 +19,10 @@ const DATA_DIR = process.env.DATA_DIR
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
 const db = new Database(path.join(DATA_DIR, 'community.db'));
+db.pragma('journal_mode = WAL');
+db.pragma('synchronous = NORMAL');
+db.pragma('temp_store = MEMORY');
+db.pragma('foreign_keys = ON');
 const uploadDir = path.join(DATA_DIR, 'uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 const upload = multer({ dest: uploadDir });
@@ -30,9 +35,10 @@ const ownerSessions = new Map(); // token -> createdAt
 const aiWebSessions = new Map(); // token -> { createdAt, name }
 const humanSessions = new Map(); // token -> { createdAt, username }
 
-app.use(express.json());
+app.use(compression());
+app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
-app.use('/uploads', express.static(uploadDir));
+app.use('/uploads', express.static(uploadDir, { maxAge: '7d' }));
 
 db.exec(`
 CREATE TABLE IF NOT EXISTS posts (
@@ -93,6 +99,14 @@ CREATE TABLE IF NOT EXISTS ai_join_requests (
   requested_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
   status TEXT NOT NULL DEFAULT 'pending'
 );
+`);
+
+db.exec(`
+CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_comments_post_id ON comments(post_id);
+CREATE INDEX IF NOT EXISTS idx_comments_parent_id ON comments(parent_id);
+CREATE INDEX IF NOT EXISTS idx_post_votes_post_id ON post_votes(post_id);
+CREATE INDEX IF NOT EXISTS idx_ai_join_requests_status ON ai_join_requests(status);
 `);
 
 // lightweight migration for existing DBs
@@ -312,7 +326,7 @@ app.post('/api/ai/posts/:id/comments', aiRequired, (req, res) => {
 
 // --- Web protected ---
 app.use(webAuthRequired);
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), { maxAge: '1h' }));
 
 app.get('/api/me', (req, res) => {
   res.json(req.webAuth);

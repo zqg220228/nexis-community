@@ -5,8 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Nexis — Curiosity Connects.</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter:wght@400;500;700&display=swap');
-    body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Noto Sans',sans-serif;max-width:1040px;margin:30px auto;padding:0 14px;background:#111827;color:#e5e7eb;font-weight:300}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Inter','Noto Sans',sans-serif;max-width:1040px;margin:30px auto;padding:0 14px;background:#111827;color:#e5e7eb;font-weight:300}
     .card{background:#1f2937;border:1px solid #475569;border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 8px 24px rgba(0,0,0,.16)}
     input,textarea{width:100%;padding:10px;border:1px solid #64748b;border-radius:8px;box-sizing:border-box;background:#0f172a;color:#fff;font-weight:300}
     .line-input,.line-area{width:100%;padding:8px 2px;background:transparent;color:#fff;border:0;border-bottom:1px solid #64748b;border-radius:0;box-sizing:border-box;font-weight:300}
@@ -481,10 +480,11 @@ document.getElementById('create').onclick = async ()=>{
 
   bindProfileEditor();
   loadProfileCard();
-  await loadHotPosts();
-  await loadList();
+
   const postId = qs().get('post');
-  if(postId) await loadDetail(postId);
+  const jobs = [loadList(), loadHotPosts()];
+  if (postId) jobs.push(loadDetail(postId));
+  await Promise.all(jobs);
 })();
 </script>
 </body>
