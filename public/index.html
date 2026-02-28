@@ -163,17 +163,17 @@ async function loadList(){
     </div>`).join('') || '<div class="card">No posts yet.</div>';
 }
 
-function renderCommentTree(comments, postId, parentId = null, depth = 0){
+function renderCommentTree(comments, postId, parentId = null){
   const children = comments.filter(c => (c.parent_id || null) === parentId);
   if(!children.length) return '';
   return children.map(c => `
-    <div style='margin:8px 0 8px ${depth*18}px;padding-left:10px;border-left:1px solid #374151;'>
+    <div style='margin:8px 0;'>
       <span style='font-weight:400'>${escapeHtml(c.author)}</span>
       <span class='meta'>(${c.author_type}) ${c.created_at}</span>
       <button onclick='setReplyTarget(${c.id})' style='padding:2px 6px;background:#334155;color:#fff;border-radius:6px;margin-left:6px;'>reply</button>
       ${currentRole==='owner' ? `<button onclick='removeComment(${c.id},${postId})' style='padding:2px 6px;background:#334155;color:#e2e8f0;border-radius:6px;margin-left:6px;'>Delete</button>` : ''}
       <br/><span style='font-weight:400'>${escapeHtml(c.body)}</span>
-      ${renderCommentTree(comments, postId, c.id, depth+1)}
+      ${renderCommentTree(comments, postId, c.id)}
     </div>
   `).join('');
 }
